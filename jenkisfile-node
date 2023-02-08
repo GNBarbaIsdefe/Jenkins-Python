@@ -1,0 +1,40 @@
+pipeline {
+    agent {
+    node {
+        label 'linux'
+    }
+        }
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git(url: 'https://github.com/administradorcnig/Vis.NGN.git', branch: 'main',  credentialsId: 'VisualizadorNGN-Git',)
+            }
+        }
+        stage('Sonar NPM') {
+            steps {
+                withSonarQubeEnv(installationName: 'sonarQ') {
+                    sh '''
+                     cd ./Sources/nomenclator_ngn
+                     echo "sonar.projectKey=vis-NGN-jenkins" >> sonar-project.properties
+                     echo "sonar.projectName=Visualizador NGN" >> sonar-project.properties
+                     echo "sonar.projectVersion=8.9.10" >> sonar-project.properties 
+                     echo "sonar.language=js" >> sonar-project.properties
+                     echo "sonar.sources=src" >> sonar-project.properties
+                     echo "sonar.sources=test" >> sonar-project.properties
+                     echo "sonar.login=3b79c785d9b4b9fe3c104174420105f0aec87f87" >> sonar-project.properties
+                     echo "sonar.sourceEncoding=UTF-8" >> sonar-project.properties
+                     npm i
+                    '''
+                }
+            }
+        }
+        stage('Sonar-Buid - Maven APP') {
+            steps {
+                 sh '''
+                 cd ./Sources/nomenclator_ngn
+                 mvn -e clean package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.0.2155:sonar -Dsonar.projectKey=vis-NGN-jenkins -Dsonar.host.url=http://10.67.33.249:9000 -Dsonar.login=3b79c785d9b4b9fe3c104174420105f0aec87f87 -DskipTests
+                 '''
+                }
+        }
+    }
+}
